@@ -37,16 +37,31 @@
   </PropertyGroup>
   <ItemGroup>
      <Compile Include="Assets\Scripts\Car.cs" />
+     <Compile Include="Assets\Scripts\Input\Bot Input\Race Bot\RaceBotSettings.cs" />
+     <Compile Include="Assets\Scripts\Checkpoint.cs" />
      <Compile Include="Assets\Scripts\DriveCar_Wheels.cs" />
      <Compile Include="Assets\New Controls.cs" />
+     <Compile Include="Assets\Scripts\AITeacher.cs" />
      <Compile Include="Assets\Scripts\CameraFollow.cs" />
-     <Compile Include="Assets\FootballPhysics.cs" />
-     <Compile Include="Assets\Scripts\InputManager.cs" />
+     <Compile Include="Assets\Scripts\FootballPhysics.cs" />
+     <Compile Include="Assets\Scripts\NeuralNetwork.cs" />
+     <Compile Include="Assets\Scripts\SaveSystem.cs" />
+     <Compile Include="Assets\Scripts\Input\Bot Input\BotInput.cs" />
+     <Compile Include="Assets\Scripts\Input\InputManager.cs" />
      <Compile Include="Assets\Scripts\WheelFollowCollider.cs" />
-     <Compile Include="Assets\Scripts\KeyboardInput.cs" />
+     <Compile Include="Assets\Scripts\Input\User Input\KeyboardInput.cs" />
      <Compile Include="Assets\Scripts\DriveCar.cs" />
-     <Compile Include="Assets\PlayerConnection.cs" />
+     <Compile Include="Assets\Scripts\FreezeCar.cs" />
+     <Compile Include="Assets\Scripts\PlayerConnection.cs" />
      <Compile Include="Assets\Scripts\ReloadScene.cs" />
+     <Compile Include="Assets\Scripts\Input\Bot Input\Race Bot\RaceBot.cs" />
+     <Compile Include="Assets\Scripts\Input\Bot Input\Chase Bot\ChaseBot.cs" />
+     <Compile Include="Assets\Scripts\Input\Bot Input\Chase Bot\SetupChaseBot.cs" />
+     <Compile Include="Assets\Scripts\Input\Bot Input\SetupBotInput.cs" />
+     <Compile Include="Assets\Scripts\Input\Bot Input\Chase Bot\ChaseBotSettings.cs" />
+     <Compile Include="Assets\Scripts\Input\Bot Input\Race Bot\SetupRaceBot.cs" />
+     <Compile Include="Assets\TargetMovement.cs" />
+     <Compile Include="Assets\Scripts\Input\Bot Input\Chase Bot\SimpleChase.cs" />
     <Reference Include="UnityEngine">
         <HintPath>C:/Program Files/Unity/Hub/Editor/2020.3.1f1/Editor/Data/Managed/UnityEngine/UnityEngine.dll</HintPath>
     </Reference>

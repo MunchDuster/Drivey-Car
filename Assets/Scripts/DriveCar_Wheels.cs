@@ -6,12 +6,11 @@ public class DriveCar_Wheels : MonoBehaviour
 {
 
 	public float speed = 10;
-	public float turnAngle = 20;
-	public float antiRollForce = 4;
+    public float jumpForce = 1;
+    public float turnSpeed = 5;
+    public float turnAngle = 20;
 	public float brakeForce = 100000;
-	public float turnTorque = 100;
 	public Vector3 centerOfMass = Vector3.zero;
-	public float antiSlideForce = 1000;
 	public InputManager input;
 	public WheelCollider[] driveWheels;
 	public WheelCollider[] steerWheels;
@@ -34,11 +33,10 @@ public class DriveCar_Wheels : MonoBehaviour
 	{
 		foreach (WheelCollider wheel in steerWheels)
 		{
-			wheel.steerAngle = steer * turnAngle;
-
+            //if user not pressing side key then return to center if wheel is turned    
+            float steerDirection = (Mathf.Abs(steer) > 0.5f) ? steer : (Mathf.Abs(wheel.steerAngle) > 1f)?-wheel.steerAngle/Mathf.Abs(wheel.steerAngle):0;
+            wheel.steerAngle = Mathf.Clamp(wheel.steerAngle + Time.deltaTime * turnSpeed * steerDirection * turnAngle,-turnAngle,turnAngle);
 		}
-		//rb.AddTorque(steer * turnTorque * Vector3.up * Time.deltaTime, ForceMode.VelocityChange);
-		rb.AddRelativeForce(steer * antiSlideForce * Time.deltaTime * transform.right);
 	}
 	void Brake(bool isPressed)
 	{
@@ -61,14 +59,21 @@ public class DriveCar_Wheels : MonoBehaviour
 	{
 		if (!isPressed)
 			return;
-		//move the car up a little bit
-		transform.position += Vector3.up * 3;
-		//make it face the same direction and unflip it
-		Vector3 eulers = Vector3.up * transform.rotation.eulerAngles.y;
-		transform.rotation = Quaternion.Euler(eulers);
-		//remove angular velocity
-		rb.AddTorque(-rb.angularVelocity, ForceMode.VelocityChange);
+		//go back to start position
+		transform.position = Vector3.up * 3;
+        transform.rotation = Quaternion.identity;
+        //remove velocity
+        rb.AddForce(-rb.velocity, ForceMode.VelocityChange);
+        //remove angular velocity
+        rb.AddTorque(-rb.angularVelocity, ForceMode.VelocityChange);
 	}
+    void Jump(bool isPressed)
+    {
+        if (!isPressed)
+			return;
+
+        rb.AddForce(Vector3.up * jumpForce, ForceMode.VelocityChange);
+    }
 	void Drift(bool isPressed)
 	{
 		if (isPressed)
@@ -105,9 +110,10 @@ public class DriveCar_Wheels : MonoBehaviour
 			originalCurves.Add(wheel, wheel.sidewaysFriction);
 		}
 
-		input.OnResetPressed += Reset;
+		input.OnJumpPressed += Jump;
 		input.OnBrakePressed += Brake;
 		input.OnDriftPressed += Drift;
+        input.OnResetPressed += Reset;
 
 
 		List<Vector3> wheelpointsList = new List<Vector3>();

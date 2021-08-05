@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 599570c804afba846b94e1fc130a1fbe, type: 3}
+  m_Name: Race Bot Setting
+  m_EditorClassIdentifier: 
+  showOnScore: 154.63
+  distanceScoreMultplier: 0
+  noOfRays: 7
+  maxLength: 30
+  spreadAngle: 60
+  downAngle:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: -0
+      value: 0.9999995
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.35
+      value: 1.0000131
+      inSlope: -0.00024923912
+      outSlope: -0.00024923912
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.6190476
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.5
+      value: 0.30000588
+      inSlope: -0.002177278
+      outSlope: -0.002177278
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.6793304
+      value: 0.9993217
+      inSlope: -0.0024428735
+      outSlope: -0.0024428735
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0.9988313
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  downAngleMultiplier: 7.69
+  checkpointBonus: 5
+  drawRays: 0
+  layerMask:
+    serializedVersion: 2
+    m_Bits: 1

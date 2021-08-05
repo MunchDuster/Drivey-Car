@@ -187,6 +187,17 @@ public class @NewControls : IInputActionCollection, IDisposable
                     ""isPartOfComposite"": true
                 },
                 {
+                    ""name"": """",
+                    ""id"": ""e3593d1f-d323-4ce8-ba1c-b27f4481abff"",
+                    ""path"": ""<Gamepad>/rightStick/y"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Vertical"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
                     ""name"": ""1D Axis"",
                     ""id"": ""1cf5057d-5a99-4175-a671-0457ff1f7ad2"",
                     ""path"": ""1DAxis"",
@@ -311,6 +322,17 @@ public class @NewControls : IInputActionCollection, IDisposable
                     ""name"": """",
                     ""id"": ""7a4c920e-f2f4-41d8-9a59-021581f0640e"",
                     ""path"": ""<Keyboard>/t"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Settings"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7969d1a7-d5b1-4ee0-a17e-19dc21d4508d"",
+                    ""path"": ""<Gamepad>/rightShoulder"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
