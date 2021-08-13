@@ -1,9 +1,11 @@
-public abstract class SetupRaceBot : SetupBotInput
+using UnityEngine;
+
+public class SetupRaceBot : SetupBotInput
 {
-    public ChaseBotSettings settings;
+    public RaceBotSettings settings;
     public override void SetupBot(BotInput genericBot)
     {
-        ChaseBot bot = genericBot as ChaseBot;
+        RaceBot bot = genericBot as RaceBot;
         bot.settings = settings;
     }
 }

@@ -19,7 +19,6 @@ public class AITeacher : MonoBehaviour
     public GameObject prefab;
     public SetupBotInput botSetupper;
     public Transform spawnPoint;
-    public bool startWithSaved = true;
     [Header("UI")]
     public Text generationText;
     public Text batchText;
@@ -37,6 +36,12 @@ public class AITeacher : MonoBehaviour
     //Start is called before the first frame
     void Start()
     {
+		GameSettings gameSettings = GameObject.Find("Settings").GetComponent<GameSettings>();
+		if(!gameSettings.isAIActive)
+		{
+			Destroy(gameObject);
+		}	
+		
         batchRunTime = timePerBatch;
 
         Bots = new List<BotInput>();
@@ -45,15 +50,9 @@ public class AITeacher : MonoBehaviour
         GenerationBestNets = new List<NeuralNetwork>();
         BatchBestNets = new List<NeuralNetwork>();
         GenerationNets = new List<NeuralNetwork>();
-        if(startWithSaved)
+        if(gameSettings.startWithSaved)
         {
             List<NeuralNetwork> loadedData = SaveSystem.Load();
-            Debug.Log("Loaded overall bests: ");
-            for (int i = 0; i < loadedData.Count;i++)
-            {
-                Debug.Log(loadedData[i]);
-            }
-            Debug.Log("Finished loading..");
             if (loadedData != null)
                 {
                     OverallBestNets = loadedData;

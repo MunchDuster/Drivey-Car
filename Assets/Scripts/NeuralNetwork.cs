@@ -155,7 +155,10 @@ public class NeuralNetwork : IComparable<NeuralNetwork>
 	private float sigmoidDerivative(float x){
 		return (0.5f + sigmoid(x)/2)*(1-(0.5f + sigmoid(x) / 2));
 	}
-   
+    public float[][] GetNeurons()
+    {
+        return neurons;
+    }
     public float[] FeedForward(float[] inputs)
     {
         //Add inputs to the neuron matrix
