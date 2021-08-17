@@ -72,13 +72,6 @@ public class Car : MonoBehaviour
 			{
 				Debug.DrawRay(wheelpoint.position, wheelpoint.forward * wheelMaxDistance, Color.green);
 			}
-
-			//ANTI CAR ROLL FORCES
-			Vector3 unrollforce = Vector3.Project(wheelpoint.position - rb.worldCenterOfMass, -down);
-			Vector3 antiTurnForce = -unrollforce.y * antiRollForce * -wheelpoint.forward;
-			rb.AddForceAtPosition(antiTurnForce, wheelpoint.position);
-			Debug.DrawRay(wheelpoint.position, antiTurnForce, Color.blue);
-
 			//Friction stuff
 
 		}

@@ -62,17 +62,27 @@ public class TrainAI : MonoBehaviour
         net = new NeuralNetwork(layers.ToArray());
     }
     
-    private void BackPropagate()
+    private void BackPropagate(TrackingData trackData)
     {
+        float[][][] weights = net.GetWeights();
+        float[][] biases = net.GetBiases();
         
-    }
-    private void TrainAI()
-    {
+        net.FeedForward(trackData.inputs);
         
-        for(TrackingData trackData in playerTrackedData)
+        float[][] neurons = net.GetNeurons();
+        /*
+        for(int r = 0; r < weights.Length; r++)
         {
-            float[][][] weights = net.GetWeights();
-            BackPropagate(weights,trackData);
+            for(int c = 0; c <  )
+        }
+        */
+    }
+    private void TrainTheAI()
+    {
+        
+        foreach(TrackingData trackData in playerTrackedData)
+        {
+            BackPropagate(trackData);
         }
     }
 

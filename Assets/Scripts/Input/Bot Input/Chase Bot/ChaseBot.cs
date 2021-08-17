@@ -14,7 +14,7 @@ public class ChaseBot : BotInput
         float distanceToTarget = directionToTarget.magnitude;
 
         float[] inputs = new float[4];
-        
+
         inputs[0] = rb.angularVelocity.y;
         inputs[1] = rb.velocity.magnitude;
         inputs[2] = angleToTarget;
@@ -24,9 +24,9 @@ public class ChaseBot : BotInput
     }
     public override void UpdateFitness()
     {
-        
+
         //not moving fast enough to stabily calculate dotproduct 
-        if(rb.velocity.magnitude < 1) return;
+        if (rb.velocity.magnitude < 1) return;
 
         //get dot product of movement dirction compared to car forward direction
         Vector3 movementDirection = Vector3.Scale(rb.velocity.normalized, new Vector3(1, 0, 1));
@@ -35,11 +35,11 @@ public class ChaseBot : BotInput
 
         //if dot product is less than zero car is moving backwards
         //I will only reward car if it is moving forwards (or sideways for them sweet drifts)
-        if(dotProduct > 0)
+        if (dotProduct > 0)
         {
             float distance = (target.position - transform.position).magnitude;
             network.AddFitness(settings.scoreMultiplier * dotProduct / distance);
-            if(network.fitness > settings.activateBeaconScore)
+            if (network.GetFitness() > settings.activateBeaconScore)
                 beacon.SetActive(true);
         }
     }

@@ -1,195 +1,293 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+
 public class AITeacher : MonoBehaviour
 {
     [Header("Batch and generation settings")]
-    public int unitsPerBatch = 100;
-    public int batchesPerGeneration = 20;
+    public int botsPerBatch = 100;
+    public int batches = 20;
     public float timePerBatch = 15;
     public float timeIncreasePerGen = 1;
     public int toppersTakenPerBatch = 10;
     public int toppersTakenPerGeneration = 10;
     public int toppersTakenOverall = 10;
+
     [Header("Bot settings")]
     public int botMiddleLayers = 2;
     public int botMiddleLayerNeurons = 10;
-    [Range(0f,1f)]
+    [Range(0f, 1f)]
     public float mutationChance = .1f;
+    
+    public Transform spawnPoint;
+    public Transform botParent;
+    
     public GameObject prefab;
     public SetupBotInput botSetupper;
-    public Transform spawnPoint;
+
     [Header("UI")]
-    public Text generationText;
-    public Text batchText;
-    public Transform botParent;
-    private List<BotInput> Bots;
-    private List<NeuralNetwork> OverallBestNets;
-    private List<NeuralNetwork> GenerationBestNets;
-    private List<NeuralNetwork> BatchBestNets;
-    private List<NeuralNetwork> GenerationNets;
-    private int batch = 0;
-    private int generation = 1;
+    public TMP_Text generationText;
+    public TMP_Text batchText;
+    public TMP_Text botsText;
+    public TMP_Text timeText;
     
+    public TMP_InputField botsPerBatchInput;
+    public TMP_InputField batchesPerGenerationInput;
+    
+    
+    //private vars
+    
+    private BotInput[] BatchBots;
+    private NeuralNetwork[][] GenerationNets;
+    
+    private NeuralNetwork[] OverallBestNets;
+    private NeuralNetwork[] GenerationBestNets;
+    
+    private int batch;
+    private int generation;
+
     private float batchRunTime;
-    private float roundStartTime;
+    private float roundStartTime = 10000000000;//Set to big number so that round doesn't start before use starts it
+
+    private int[] netLayers;
+    GameSettings gameSettings;
+    
+    private SaveData loadedData;
+    
     //Start is called before the first frame
     void Start()
     {
-		GameSettings gameSettings = GameObject.Find("Settings").GetComponent<GameSettings>();
-		if(!gameSettings.isAIActive)
-		{
-			Destroy(gameObject);
-		}	
-		
-        batchRunTime = timePerBatch;
-
-        Bots = new List<BotInput>();
-
-        OverallBestNets = new List<NeuralNetwork>();
-        GenerationBestNets = new List<NeuralNetwork>();
-        BatchBestNets = new List<NeuralNetwork>();
-        GenerationNets = new List<NeuralNetwork>();
-        if(gameSettings.startWithSaved)
+        //add Input listeners
+        botsPerBatchInput.onEndEdit.AddListener(delegate{SetBotsperBatch(botsPerBatchInput.text);});
+        batchesPerGenerationInput.onEndEdit.AddListener(delegate{SetBatchesPerGen(batchesPerGenerationInput.text);});
+        //get game settings
+        gameSettings = GameObject.Find("Settings").GetComponent<GameSettings>();
+        
+        if (!gameSettings.isAIActive)
         {
-            List<NeuralNetwork> loadedData = SaveSystem.Load();
-            if (loadedData != null)
-                {
-                    OverallBestNets = loadedData;
-                    GenerateNewNets();
-                }
-                else
-                {
-                    GenerateRandomGeneration();
-                }
-        }
-        else
-        {
-            GenerateRandomGeneration();
+            Debug.Log("YEET");
+            Destroy(gameObject);
         }
         
-        
-        NextRound();
-    }
-
-    void GenerateRandomGeneration()
-    {
-        for (int i = 0; i < batchesPerGeneration * unitsPerBatch;i++)
-        {
-            //copy a reandom network crossed between two by a reandom amount in overall bests
-            NeuralNetwork net = GenerateRandomNet();
-            GenerationNets.Add(net);
-        }
-        for (int i = 0; i < toppersTakenOverall; i++)
-        {
-            OverallBestNets.Add(GenerationNets[i]);
-        }
-    }
-    NeuralNetwork GenerateRandomNet()
-    {
-        //setup layering structure for nneural network
-        int[] netLayers = new int[botMiddleLayers + 2];
-
-        netLayers[0] = prefab.GetComponent<BotInput>().getInputLength();
-        for (int i = 0; i < botMiddleLayers;i++)
-        {
-            netLayers[i + 1] = botMiddleLayerNeurons;
-        }
-        netLayers[botMiddleLayers + 1] = 2;
-
-        //log the setup for neural network
-        string layersStr = "";
-        for (int i = 0; i < netLayers.Length;i++)
-        {
-            layersStr += " " + netLayers[i];
-        }
-        Debug.Log("LAYERS: " + layersStr);
-
-        //ake the neural network
-        NeuralNetwork net = new NeuralNetwork(netLayers);
-
-        //assign random weights and biases
-        float[][][] weights = net.GetWeights();
-
-        for (int i = 0; i < weights.Length; i++)
-        {
-            for (int j = 0; j < weights[i].Length; j++)
-            {
-                for (int k = 0; k < weights[i][j].Length; k++)
-                {
-                    weights[i][j][k] = Random.Range(-1f, 1f);
-                }
-            }
-        }
-        net.CopyWeights(weights);
-
-        float[] biases = net.GetBiases();
-        for (int i = 0; i < biases.Length; i++)
-        {
-            biases[i] = Random.Range(-1f, 1f);
-        }
-        net.CopyBiases(biases);
-
-        return net;
     }
     // Update is called once per frame
     void Update()
     {
         //if the time since the roundhas started is more than the allowed time, start new round.
-        if(Time.time - roundStartTime >= batchRunTime)
+        if (Time.time - roundStartTime >= batchRunTime)
         {
             NextRound();
         }
-    }   
-    //Starts next batch or generation
-    void NextRound()
-    {
-        roundStartTime = Time.time;
-        batch++;
-
-        GetBestOfBatch();
-        CompareBatchToGeneration();
-
-        if(batch > batchesPerGeneration)
+        else
         {
-            //start new generation
-            batch = 1;
-            generation++;
-            Debug.Log("GENERATION " + generation);
-            batchRunTime += timeIncreasePerGen;
+            float timeleft = (int)(batchRunTime - (Time.time - roundStartTime));
+            timeText.text = "Time left: " + timeleft;
+        }
+    }
+    
+    
+    void SetBotsperBatch(string text)
+    {
+        try
+        {
+            botsPerBatch = int.Parse(botsPerBatchInput.text);
+        }
+        catch (System.Exception)
+        {
+            Debug.Log("Unable to parse.");
+        }
+    }
+    void SetBatchesPerGen(string text)
+    {
+        try
+        {
+            batches = int.Parse(batchesPerGenerationInput.text);
+        }
+        catch (System.Exception)
+        {
+            Debug.Log("Unable to parse.");
+        }
+    }
+    
+    
+    public void BeginTeaching()
+    {
+        batchRunTime = timePerBatch;
 
-            CompareGenerationToOverall();
-            SaveSystem.Save(OverallBestNets);
-            ClearLists();
-            GenerateNewNets();
+        //setup layering structure for neural networks
+        netLayers = new int[botMiddleLayers + 2];
+
+        netLayers[0] = prefab.GetComponent<BotInput>().getInputLength();
+        for (int i = 0; i < botMiddleLayers; i++)
+        {
+            netLayers[i + 1] = botMiddleLayerNeurons;
+        }
+        netLayers[botMiddleLayers + 1] = 2;
+        
+        //Lists init
+        BatchBots = new BotInput[batches];
+        GenerationNets = new NeuralNetwork[batches][];
+        
+        OverallBestNets = new NeuralNetwork[toppersTakenOverall];
+        GenerationBestNets = new NeuralNetwork[toppersTakenPerGeneration];
+        
+        //Init generation
+        if (gameSettings.startWithSaved)
+        {
+            loadedData = SaveSystem.Load(gameSettings.loadIndex);
+            if (loadedData != null)
+            {
+                //Load success, use loaded nets
+                OverallBestNets = loadedData.overallBestNets;
+                //Set gen and batch
+                generation = loadedData.generation;
+                batch = loadedData.batch;
+                //Mutate and go
+                GenerateNewNets();
+            }
+            else
+            {   
+                //Load failed, generate fresh batch
+                GenerateRandomGeneration();
+            }
+        }
+        else
+        {
+            //Start gen from fresh
+            GenerateRandomGeneration();
         }
         
+        //Start batch
+        roundStartTime = Time.time;
+        SpawnBots();
+        
+        updateText();
+        
+        //Fill the generation best
+        for(int i=0;i < toppersTakenPerGeneration; i++)
+        {
+            GenerationBestNets[i] = GenerationNets[batch][i];
+        }
+    }
+
+    void GenerateRandomGeneration()
+    {
+        //Init gen and batch
+        generation = 0;
+        batch = 0;
+    
+        for (int b = 0; b < batches; b++)
+        {
+            NeuralNetwork[] batchNets = new NeuralNetwork[botsPerBatch];
+            for (int i = 0; i < botsPerBatch; i++)
+            {
+                //copy a reandom network crossed between two by a reandom amount in overall bests
+                NeuralNetwork net = GenerateRandomNet();
+                batchNets[i] = net;
+            }
+            GenerationNets[b] = batchNets;
+        }
+        for (int i = 0; i < toppersTakenOverall; i++)
+        {
+            OverallBestNets[i] = GenerationNets[0][i];
+        }
+    }
+    
+    NeuralNetwork GenerateRandomNet()
+    {
+        //make the neural network
+        NeuralNetwork net = new NeuralNetwork(netLayers);
+        return net;
+    }
+    //Starts next batch or generation
+    void NextGeneration()
+    {
+        //Reset batch number
+        batch = 0;
+        //increment generation number
+        generation++;
+        
+        Debug.Log("GENERATION " + generation);
+        
+        //increase batch run time
+        batchRunTime += timeIncreasePerGen;
+        
+        //Update Overall Bests
+        CompareGenerationToOverall();
+        
+        //Clear generation best list
+        System.Array.Clear(GenerationBestNets,0,GenerationBestNets.Length);
+        
+        //Populate Generatinon nets
+        GenerateNewNets();
+        
+        //Fill the generation best
+        for(int i=0;i < toppersTakenPerGeneration; i++)
+        {
+            GenerationBestNets[i] = GenerationNets[0][i];
+        }
+    }
+    void SaveCurrentOveralls()
+    {
+        loadedData.batch = batch;
+        loadedData.generation = generation;
+        loadedData.overallBestNets = OverallBestNets;
+        //Save
+        SaveSystem.SaveOld(gameSettings.loadIndex,loadedData);
+    }
+    void NextRound()
+    {
+        CompareBatchToGeneration();
+        
+        batch++;
+        if (batch > batches)
+        {
+            //start new generation
+           NextGeneration();
+        }
+
         //start new batch
         Debug.Log("Starting Batch " + batch);
 
-        generationText.text = "Generation: " + generation;
-        batchText.text = "Batch: " + batch + "/" + batchesPerGeneration;
-        ClearBots();
+        updateText();
+        
+        roundStartTime = Time.time;
+        DestroyBots();
         SpawnBots();
     }
+    void updateText()
+    {
+        generationText.text = "Generation: " + generation;
+        batchText.text = "Batch: " + batch + "/" + batches;
+        botsText.text = "Bots per batch: " + botsPerBatch;
+    }
+    //generate a new genereation of nets mutated off the best overalls
     void GenerateNewNets()
     {
-        GenerationNets.Clear();
-        for (int i = 0; i < batchesPerGeneration * unitsPerBatch;i++)
+        for(int b = 0; b < batches; b++)
         {
-            //copy a reandom network crossed between two by a reandom amount in overall bests
-            NeuralNetwork net = new NeuralNetwork(OverallBestNets[Random.Range(0, toppersTakenOverall)]);//lerpNets(OverallBestNets[Random.Range(0, toppersTakenOverall)],OverallBestNets[Random.Range(0, toppersTakenOverall)],Random.Range(0f,1f));
-            //mutate slightly
-            MutateNet(ref net, mutationChance);
+            NeuralNetwork[] batchNets = new NeuralNetwork[botsPerBatch];
+            
+            for (int i = 0; i < botsPerBatch; i++)
+            {
+                //copy a reandom network crossed between two by a reandom amount in overall bests
+                NeuralNetwork net = new NeuralNetwork(OverallBestNets[Random.Range(0, toppersTakenOverall - 1)]);//lerpNets(OverallBestNets[Random.Range(0, toppersTakenOverall)],OverallBestNets[Random.Range(0, toppersTakenOverall)],Random.Range(0f,1f));
 
-            GenerationNets.Add(net);
+                //mutate
+                MutateNet(ref net, mutationChance);
+                
+                //add to batch
+                batchNets[i] = net;
+            }
+            GenerationNets[b] = batchNets;
         }
     }
     NeuralNetwork lerpNets(NeuralNetwork a, NeuralNetwork b, float lerp)
     {
-        if(a.layers != b.layers) Debug.LogException(new System.Exception("Cannot cross unmatching networks."));
+        if (a.GetLayers() != b.GetLayers()) Debug.LogException(new System.Exception("Cannot cross unmatching networks."));
 
-        NeuralNetwork ans = new NeuralNetwork(a.layers);
+        NeuralNetwork ans = new NeuralNetwork(a.GetLayers());
         float[][][] aWeights = a.GetWeights();
         float[][][] bWeights = b.GetWeights();
         float[][][] lerpWeights = a.GetWeights();
@@ -204,132 +302,132 @@ public class AITeacher : MonoBehaviour
             }
         }
         ans.CopyWeights(lerpWeights);
-        
-        float[] aBiases = a.GetBiases();
-        float[] bBiases = b.GetBiases();
-        float[] lerpBiases = a.GetBiases();
+
+        float[][] aBiases = a.GetBiases();
+        float[][] bBiases = b.GetBiases();
+        float[][] lerpBiases = a.GetBiases();
         for (int i = 0; i < aBiases.Length; i++)
         {
-            lerpBiases[i] = Mathf.Lerp(aBiases[i], bBiases[i], lerp);
+            for (int j = 0; j < aBiases.Length; j++)
+            {
+                lerpBiases[i][j] = Mathf.Lerp(aBiases[i][j], bBiases[i][j], lerp);
+            }
         }
         ans.CopyBiases(lerpBiases);
 
         return ans;
     }
-    void ClearLists(){
-        GenerationBestNets.Clear();
-        BatchBestNets.Clear();
-    }
     //goes through batch and get top (toppersTakenPerBatch) scoring nets
-    void GetBestOfBatch()
+    void SortBatch()
     {
-
-        BatchBestNets.Clear();
-        for (int i = 0; i < toppersTakenPerBatch && i < Bots.Count; i++)
+        //organise batch
+        for (int i = 0; i < toppersTakenPerBatch; i++)
         {
-            BatchBestNets.Add(Bots[i].network);
-        }
-        for (int batchIndex = 0; batchIndex < Bots.Count; batchIndex++)
-        {   
-            bool putIn = false;
-            for (int bestOfBatchIndex = 0; bestOfBatchIndex < BatchBestNets.Count && !putIn; bestOfBatchIndex++)
+            int replacementIndex = -1;
+            for(int indexInBatch = i + 1; indexInBatch < botsPerBatch; indexInBatch++)
             {
-                if (Bots[batchIndex].network.fitness > BatchBestNets[bestOfBatchIndex].fitness)
+                if(BatchBots[indexInBatch].network.GetFitness() > BatchBots[i].network.GetFitness())
                 {
-                    putIn = true;
-                    BatchBestNets.Insert(bestOfBatchIndex, Bots[batchIndex].network);
+                    replacementIndex = indexInBatch;
                 }
             }
+            if(replacementIndex != -1)
+            {
+                BotInput temp = BatchBots[replacementIndex];
+                BatchBots[replacementIndex] = BatchBots[i];
+                BatchBots[i] = temp;
+                
+                Debug.Log("Batch " + i + ": " + BatchBots[i].network.GetFitness());
+            }
         }
-        TrimList(ref BatchBestNets, toppersTakenPerBatch - 2);
-
-        if(BatchBestNets.Count > 0)
-            Debug.Log("Batch best: " + BatchBestNets[0].fitness);
     }
+    
     //goes through generation best and compare to overall bests
     void CompareBatchToGeneration()
-    {
-        GenerationBestNets.Clear();
-        for (int i = 0; i < toppersTakenPerGeneration && i < Bots.Count; i++)
-        {
-            GenerationBestNets.Add(Bots[i].network);
-        }
-        for (int batchIndex = 0; batchIndex < BatchBestNets.Count; batchIndex++)
-        {
-            bool putIn = false;
-            for (int genIndex = 0; genIndex < GenerationBestNets.Count && !putIn; genIndex++)
-            {
-                if (BatchBestNets[batchIndex].fitness > GenerationBestNets[genIndex].fitness)
+    {        
+        for (int i = 0; i < toppersTakenPerGeneration; i++)
+        {   
+                bool placed = false;
+                for(int g = 0; g < toppersTakenPerGeneration && !placed; g++)
                 {
-                    putIn = true;
-                    GenerationBestNets.Insert(genIndex, BatchBestNets[batchIndex]);
+                    if(BatchBots[i].network.GetFitness() > GenerationBestNets[g].GetFitness())
+                    {
+                        placed = true;
+                        Insert(ref GenerationBestNets, g, BatchBots[i].network);
+                    }
                 }
-            }
-        }
-        TrimList(ref GenerationBestNets, toppersTakenPerGeneration);
-
-        
+                Debug.Log("Generation " + i + ": " + GenerationBestNets[i].GetFitness());
+            
+        }  
     }
-    //removes extra list items
-    void TrimList(ref List<NeuralNetwork> networks, int lastIndex)
+    void Insert(ref NeuralNetwork[] array, int index, NeuralNetwork net)
     {
-        if(networks == null || networks.Count <= lastIndex) return;
-        networks.RemoveRange(lastIndex + 1, (networks.Count - 1 - (lastIndex + 1)));
+        for(int i = index + 1; i < array.Length; i++)
+        {
+            array[i] = array[i - 1];
+        }
+        array[index] = net;
     }
     //goes through best of batch and compare to generation bests
     void CompareGenerationToOverall()
     {
-        
-        for (int genIndex = 0; genIndex < GenerationBestNets.Count; genIndex++)
+        /////////////////////////
+        for (int genIndex = 0; genIndex < toppersTakenPerGeneration; genIndex++)
         {
             bool putIn = false;
-            for (int overIndex = 0; overIndex < OverallBestNets.Count && !putIn; overIndex++)
+            for (int overIndex = 0; overIndex < toppersTakenOverall && !putIn; overIndex++)
             {
-                if (GenerationBestNets[genIndex].fitness > OverallBestNets[overIndex].fitness)
+                if (GenerationBestNets[genIndex].GetFitness() > OverallBestNets[overIndex].GetFitness())
                 {
                     putIn = true;
-                    OverallBestNets.Insert(overIndex, GenerationBestNets[genIndex]);
+                    Insert(ref OverallBestNets, overIndex, GenerationBestNets[genIndex]);
                 }
             }
         }
-        TrimList(ref OverallBestNets, toppersTakenOverall);
 
-        if(OverallBestNets.Count > 0)
-            Debug.Log("OVERALL BESTNET: " + OverallBestNets[0].fitness);
+        for(int i=0; i<toppersTakenOverall; i++)
+        {
+            Debug.Log("OVERALL BESTNET: " + OverallBestNets[0].GetFitness());
+        }
     }
     //spawns bots into map with nueral networks based of overall bests
     void SpawnBots()
     {
-        for (int i = 0; i < unitsPerBatch; i++)
-        {
-            int index = (batch - 1) * unitsPerBatch + i;
-            NeuralNetwork net = GenerationNets[index];
+        Debug.Log("SPaWING");
+        BotInput[] batchBots = new BotInput[botsPerBatch];
+            
+            for (int i = 0; i < botsPerBatch; i++)
+            {
+                NeuralNetwork net = GenerationNets[batch][i];
 
-
-            //create gameObject
-            GameObject newBotObj = Instantiate(prefab, spawnPoint.position, spawnPoint.rotation, botParent);
-            //assign net to bot and enable bot inputs to its car
-            BotInput bot = newBotObj.GetComponent<BotInput>();
-            bot.network = net;
-            botSetupper.SetupBot(bot);
-            bot.inputEnabled = true;
-            //add bot to list
-            Bots.Add(bot);
-        }
+                //create gameObject
+                GameObject newBotObj = Instantiate(prefab, spawnPoint.position, spawnPoint.rotation, botParent);
+                
+                //assign net to bot and enable bot inputs to its car
+                BotInput bot = newBotObj.GetComponent<BotInput>();
+                bot.network = net;
+                botSetupper.SetupBot(bot);
+                bot.inputEnabled = true;
+                
+                //add bot to list
+                batchBots[i] = bot;
+            }
     }
     //removes bots from map and clears bot list
-    void ClearBots()
+    void DestroyBots()
     {
-        foreach(BotInput bot in Bots)
-        {
-            Destroy(bot.gameObject);
-        }
-        Bots.Clear();
+        foreach (BotInput bot in BatchBots)
+            {
+                Destroy(bot.gameObject);
+            }
     }
     //modify a neural network slightly (depending on chance)
     public void MutateNet(ref NeuralNetwork network, float chance)
     {
-        if(chance <= 0) return;
+        //no chance of mutation, leave as be
+        if (chance <= 0) return;
+
+        //adjust weights
         float[][][] weights = network.GetWeights();
         for (int i = 0; i < weights.Length; i++)
         {
@@ -338,7 +436,7 @@ public class AITeacher : MonoBehaviour
                 for (int k = 0; k < weights[i][j].Length; k++)
                 {
                     float value = Random.Range(0f, 1f);
-                    if(value <= chance)
+                    if (value <= chance)
                     {
                         Modify(ref weights[i][j][k]);
                     }
@@ -347,13 +445,17 @@ public class AITeacher : MonoBehaviour
         }
         network.CopyWeights(weights);
 
-        float[] biases = network.GetBiases();
+        //adjust biases
+        float[][] biases = network.GetBiases();
         for (int i = 0; i < biases.Length; i++)
         {
-            float value = Random.Range(0f, 1f);
-            if(value <= chance)
+            for (int j = 0; j < biases[i].Length; j++)
             {
-                Modify(ref biases[i]);
+                float value = Random.Range(0f, 1f);
+                if (value <= chance)
+                {
+                    Modify(ref biases[i][j]);
+                }
             }
         }
         network.CopyBiases(biases);
@@ -361,13 +463,15 @@ public class AITeacher : MonoBehaviour
     //modification used in mutateNet
     void Modify(ref float value)
     {
-        float chance = Random.Range(0, 1);
-        if(chance <= 0.2f)
-            value += Random.Range(-1f, 1f);
-        else if(chance <= 0.4f)
+        float chance = Random.Range(0f, 1f);
+        if (chance <= 0.2f)
+            value += Random.Range(0f, 1f);
+        else if (chance <= 0.4f)
+            value -= Random.Range(-1f, 0f);
+        else if (chance <= 0.6f)
             value *= Random.Range(1f, 2f);
-        else if(chance <= 0.6f)
-            value *= Random.Range(-1f, -2f);
+        else if (chance <= 0.8f)
+            value *= -1;
         else
             value /= Random.Range(1f, 2f);
     }
